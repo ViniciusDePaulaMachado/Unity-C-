@@ -11,80 +11,91 @@ public class ControleCarro : MonoBehaviour
     public Transform[] rodasMesh;
 
     public AudioClip somMotor;
+    //public AudioSource somDerrapagem;
     public AudioSource veiculoCena;
     public float somPith = 5500;
 
-    
     // motor
     public float torque;
-    public float torqueAdicionalAltaVelocidade = 900;
+    public float torqueAdicionalAltaVelocidade = 30;
     public float maxRPM = 6500;
     public float minRPM = 1000;
-    //public float velocidadeDeAceleracaoMaxima = 5;
-    //public float friccaoMotor;
-
+    
     // direção
-    public float anguloDasRodas;
+    public float anguloDasRodas = 30;
     public float velocidadeDoVolante = 10;
     public AnimationCurve suavidadeDireção;
 
     // freios
-    public float freio;
+    public float freio = 3000;
     public float velocidadeDeFrenagemMaxima = 3;
+
     // transmisão
     public float rpmVoltarMarcha = 4000;
     public float[] quantidadeMarchas = { 3.36f, 2.09f, 1.47f, 1.15f, 0.98f };
     public float relacaoDiferencial = 3.9f;
 
     // propiedades do veiculo
-    float velocidadeKM;
-    int marchaAtual = 0;
-    float rpm;
+    public float velocidadeKM;
+    public int marchaAtual = 0;
+    public float rpm;
     float aceleracao;
     float forca;
     float forcaFreio;
+    float rpmTeste = 0f;
+
+    //inputBotoes;
+    public float inputVertical;
+    public float InputVerticallTeclado;
+    public float inputHorizontal;
+    public float InputHorizontalTeclado;
+    float somaInputs;
     
-    void Direcao()
+    float acelerou;
+    float freiou;
+    public float deuRe;
+
+    public void Direcao()
     {
-        Vector3 pos;
-        Quaternion rot;
 
         for (int i = 0; i < rodascollider.Length; i++)
         {
-
+            somaInputs = inputHorizontal + InputHorizontalTeclado;
+        
             if (i < 2)
             {
-                //rodascollider[i].steerAngle = Mathf.Lerp(rodascollider[i].steerAngle, anguloDasRodas * Input.GetAxis("Horizontal"), Time.deltaTime * velocidadeDoVolante);
-                rodascollider[i].steerAngle = Input.GetAxis("Horizontal") * suavidadeDireção.Evaluate(velocidadeKM);
+                rodascollider[i].steerAngle = Mathf.Lerp(rodascollider[i].steerAngle,
+                    somaInputs * suavidadeDireção.Evaluate(velocidadeKM), Time.deltaTime * velocidadeDoVolante);
             }
 
-            rodascollider[i].GetWorldPose(out pos, out rot);
+            rodascollider[i].GetWorldPose(out Vector3 pos, out Quaternion rot);
             rodasMesh[i].position = pos;
-            rodasMesh[i].rotation = rot;
-            
+            rodasMesh[i].rotation = rot;            
         }
-        
     }
-    void AcelerarEFrear()
+
+    void AcelerarFreiar()
     {
-        if (Input.GetAxis("Vertical") > 0)
+                
+        if (inputVertical > 0 || InputVerticallTeclado > 0)
         {
             rodascollider[0].motorTorque = forca;
             rodascollider[1].motorTorque = forca;
-        } else
+        }
+        else
         {
             rodascollider[0].motorTorque = 0;
             rodascollider[1].motorTorque = 0;
-
         }
-        if(Input.GetAxis("Vertical") < 0)
-        {
-            forcaFreio = Mathf.Lerp(forcaFreio,freio , Time.deltaTime * velocidadeDeFrenagemMaxima);
+        
+        forcaFreio = Mathf.Lerp(forcaFreio,Mathf.Abs(inputVertical + InputVerticallTeclado) * freio, Time.deltaTime * velocidadeDeFrenagemMaxima);
 
+        if (inputVertical < 0 || InputVerticallTeclado < 0)
+        {
             rodascollider[0].brakeTorque = forcaFreio;
             rodascollider[1].brakeTorque = forcaFreio;
-            rodascollider[2].brakeTorque = forcaFreio;
-            rodascollider[3].brakeTorque = forcaFreio;
+            rodascollider[2].brakeTorque = forcaFreio / 2;
+            rodascollider[3].brakeTorque = forcaFreio / 2;
         }
         else
         {
@@ -93,7 +104,17 @@ public class ControleCarro : MonoBehaviour
             rodascollider[1].brakeTorque = 0;
             rodascollider[2].brakeTorque = 0;
             rodascollider[3].brakeTorque = 0;
+        }
 
+        if(deuRe > 0)
+        {
+            rodascollider[0].motorTorque = -500;
+            rodascollider[1].motorTorque = -500;
+        }
+
+        if (velocidadeKM == 0)
+        {
+            forcaFreio = 0;
         }
     }
 
@@ -128,6 +149,7 @@ public class ControleCarro : MonoBehaviour
                 marchaAtual--;
             }
         }
+
         if (rpm < rpmVoltarMarcha)
         {
             marchaAtual--;
@@ -139,38 +161,60 @@ public class ControleCarro : MonoBehaviour
         }
         
     }
+
     void SomCarro()
     {
         veiculoCena.pitch = rpm / somPith;
+
+        /* "Esse função está funcionando, só falta eu achar um audio bom de derrapagem para usar ela" 
+        if(velocidadeKM > 40f)
+        {
+            float valorAngulo = Vector3.Angle(transform.forward, carrorigidbody.velocity);
+            float angulo = (valorAngulo / 10f);
+            somDerrapagem.volume = Mathf.Clamp(angulo, 0f, 1f);
+        }*/
     }
 
     void Start()
     {
         carrorigidbody = GetComponent<Rigidbody>();
         carrorigidbody.centerOfMass = centroDeMassa;
+
         veiculoCena.clip = somMotor;
+    }
+
+    public void SubirMarcha()
+    {
+        if (marchaAtual < quantidadeMarchas.Length)
+            marchaAtual++;
+    }
+
+    public void DescerMarcha()
+    {
+        if (marchaAtual > 0)
+            marchaAtual--;
     }
 
     void Update()
     {
         Direcao();
-        AcelerarEFrear();
-        Motor();
-
+        AcelerarFreiar();
     }
 
     void FixedUpdate()
     {
+        Motor();
         Transmissao();
         SomCarro();
     }
 
-    private void OnGUI()
+   private void OnGUI()
     {
-        GUI.Label(new Rect(20, 20, 500, 32), Mathf.Round(velocidadeKM) + " KM/h");
-        GUI.Label(new Rect(20, 40, 500, 32), (marchaAtual + 1) + "° Marcha");
+        GUI.Label(new Rect(20, 20, 500, 32), rpmTeste + " Rpm");
+        /*GUI.Label(new Rect(20, 40, 500, 32), (marchaAtual + 1) + "° Marcha");
         GUI.Label(new Rect(20, 60, 500, 32), Mathf.Round(rpm) + " RPM");
         GUI.Label(new Rect(20, 80, 500, 32), forca + " Torque");
-        GUI.Label(new Rect(20, 100, 500, 32), forcaFreio + " freio");
+        GUI.Label(new Rect(20, 100, 500, 32), forcaFreio + " freio"); */
     }
+    
 }
