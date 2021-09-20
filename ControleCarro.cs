@@ -6,61 +6,118 @@ public class ControleCarro : MonoBehaviour
 {
 
     Rigidbody carrorigidbody;
-    public Vector3 centroDeMassa;
-    public WheelCollider[] rodascollider;
-    public Transform[] rodasMesh;
+    CarroInputs inputCarro;
 
-    public AudioClip somMotor;
+    [SerializeField]
+    private Vector3 centroDeMassa;
+
+    [SerializeField]
+    private WheelCollider[] rodascollider;
+
+    [SerializeField]
+    private Transform[] rodasMesh;
+
+    [SerializeField]
+    private AudioClip somMotor;
+
+
     //public AudioSource somDerrapagem;
-    public AudioSource veiculoCena;
-    public float somPith = 5500;
+    [SerializeField]
+    private AudioSource veiculoCena;
 
-    // motor
-    public float torque;
-    public float torqueAdicionalAltaVelocidade = 30;
-    public float maxRPM = 6500;
-    public float minRPM = 1000;
-    
-    // direção
-    public float anguloDasRodas = 30;
-    public float velocidadeDoVolante = 10;
-    public AnimationCurve suavidadeDireção;
+    [SerializeField]
+    private float somPith = 5500;
 
-    // freios
-    public float freio = 3000;
-    public float velocidadeDeFrenagemMaxima = 3;
+    //Configuração motor
+    [SerializeField]
+    private AnimationCurve torque = new AnimationCurve();
 
-    // transmisão
-    public float rpmVoltarMarcha = 4000;
-    public float[] quantidadeMarchas = { 3.36f, 2.09f, 1.47f, 1.15f, 0.98f };
-    public float relacaoDiferencial = 3.9f;
+    [SerializeField]
+    private float porenciaHP = 30;
 
-    // propiedades do veiculo
+    [SerializeField]
+    private float maxRPM = 6500;
+
+    [SerializeField]
+    private float minRPM = 1000;
+
+
+    //Configuração direção
+    [SerializeField]
+    private float velocidadeDoVolante = 10;
+
+    [SerializeField]
+    private AnimationCurve suavidadeDireção;
+
+
+    //Configuração freios
+    [SerializeField]
+    private float freio = 3000;
+
+    [SerializeField]
+    private float velocidadeDeFrenagemMaxima = 3;
+
+    //Configuração transmisão
+    [SerializeField]
+    private float rpmVoltarMarcha = 4000;
+
+    [SerializeField]
+    private float rpmDubirMarcha = 8000;
+
+    [SerializeField]
+    private float[] quantidadeMarchas = { 3.36f, 2.09f, 1.47f, 1.15f, 0.98f };
+
+    [SerializeField]
+    private float relacaoDiferencial = 3.9f;
+
+    [SerializeField]
+    private int velocidadeDaTransmissão = 15;
+
+    //Configuração propiedades do veiculo
+    [System.NonSerialized]
     public float velocidadeKM;
+    [System.NonSerialized]
     public int marchaAtual = 0;
+    [System.NonSerialized]
     public float rpm;
-    float aceleracao;
-    float forca;
-    float forcaFreio;
-    float rpmTeste = 0f;
 
-    //inputBotoes;
-    public float inputVertical;
-    public float InputVerticallTeclado;
-    public float inputHorizontal;
-    public float InputHorizontalTeclado;
-    float somaInputs;
-    
-    float acelerou;
-    float freiou;
-    public float deuRe;
+    private float aceleracao;
+    private float forca;
+    private float forcaFreio;
+    private float somaInputs;
+
+    void Start()
+    {
+        carrorigidbody = GetComponent<Rigidbody>();
+        carrorigidbody.centerOfMass = centroDeMassa;
+        inputCarro = GetComponent<CarroInputs>();
+        veiculoCena.clip = somMotor;
+        if(gameObject.CompareTag("Player") == true)
+        {
+            GameObject.Find("HUB_CARRO");
+        }
+    }
+
+    void Update()
+    {
+        Direcao();
+        AcelerarFreiar();
+    }
+
+    void FixedUpdate()
+    {
+        
+        Motor();
+        Transmissao();
+        SomCarro();
+    }
 
     public void Direcao()
     {
 
         for (int i = 0; i < rodascollider.Length; i++)
         {
-            somaInputs = inputHorizontal + InputHorizontalTeclado;
+            somaInputs = inputCarro.getInputHorizontal() + inputCarro.getInputHorizontalTeclado();
         
             if (i < 2)
             {
@@ -76,11 +133,12 @@ public class ControleCarro : MonoBehaviour
 
     void AcelerarFreiar()
     {
-                
-        if (inputVertical > 0 || InputVerticallTeclado > 0)
+
+        // Acelerar        
+        if (inputCarro.getInputVertical() > 0 && rpm < maxRPM || inputCarro.getInputVerticalTeclado() > 0 && rpm < maxRPM)
         {
-            rodascollider[0].motorTorque = forca;
-            rodascollider[1].motorTorque = forca;
+             rodascollider[0].motorTorque = forca;
+             rodascollider[1].motorTorque = forca;
         }
         else
         {
@@ -88,14 +146,16 @@ public class ControleCarro : MonoBehaviour
             rodascollider[1].motorTorque = 0;
         }
         
-        forcaFreio = Mathf.Lerp(forcaFreio,Mathf.Abs(inputVertical + InputVerticallTeclado) * freio, Time.deltaTime * velocidadeDeFrenagemMaxima);
+        //Frear
+        forcaFreio = Mathf.Lerp(forcaFreio,Mathf.Abs(inputCarro.getInputVertical() + inputCarro.getInputVerticalTeclado()) * freio, Time.deltaTime *
+            velocidadeDeFrenagemMaxima);
 
-        if (inputVertical < 0 || InputVerticallTeclado < 0)
+        if (inputCarro.getInputVertical() < 0 || inputCarro.getInputVerticalTeclado() < 0)
         {
             rodascollider[0].brakeTorque = forcaFreio;
             rodascollider[1].brakeTorque = forcaFreio;
             rodascollider[2].brakeTorque = forcaFreio / 2;
-            rodascollider[3].brakeTorque = forcaFreio / 2;
+            rodascollider[3].brakeTorque = forcaFreio / 2;                
         }
         else
         {
@@ -106,29 +166,29 @@ public class ControleCarro : MonoBehaviour
             rodascollider[3].brakeTorque = 0;
         }
 
-        if(deuRe > 0)
+        // dar Ré
+        if(inputCarro.getDarRe() < 0)
         {
-            rodascollider[0].motorTorque = -500;
-            rodascollider[1].motorTorque = -500;
-        }
-
-        if (velocidadeKM == 0)
-        {
-            forcaFreio = 0;
+            if(marchaAtual < 1)
+            {
+                Debug.Log("Ré");
+                rodascollider[0].motorTorque = -forca;
+                rodascollider[1].motorTorque = -forca;
+            }
         }
     }
 
     void Motor()
     {
-        forca = torque * (relacaoDiferencial + quantidadeMarchas[marchaAtual]);
+        forca = torque.Evaluate(rpm) * (relacaoDiferencial + quantidadeMarchas[marchaAtual]);
 
         velocidadeKM = carrorigidbody.velocity.magnitude * 3.6f;
-        rpm = velocidadeKM * quantidadeMarchas[marchaAtual] * (relacaoDiferencial * 8);
 
-        if(forca < 1000)
+        rpm = Mathf.Lerp(rpm,velocidadeKM * (quantidadeMarchas[marchaAtual] * (relacaoDiferencial * 8)), Time.deltaTime * 5);
+
+        if (rpm > 4000 && rpm < 6000 && forca < 1000 )
         {
-            forca += torqueAdicionalAltaVelocidade * 10f;
-
+            forca += porenciaHP * 1f;
         }
         
         if (rpm < minRPM)
@@ -140,7 +200,7 @@ public class ControleCarro : MonoBehaviour
     void Transmissao()
     {
         
-        if (rpm > maxRPM)
+        if (rpm >= rpmDubirMarcha)
         {
             marchaAtual++;
 
@@ -162,6 +222,25 @@ public class ControleCarro : MonoBehaviour
         
     }
 
+    public void SubirMarcha()
+    {
+        if (marchaAtual < quantidadeMarchas.Length)
+        {
+            marchaAtual++;
+
+            if (marchaAtual == quantidadeMarchas.Length)
+            {
+                marchaAtual--;
+            }
+        }
+    }
+
+    public void DescerMarcha()
+    {
+        if (marchaAtual > 0)
+            marchaAtual--;
+    }
+
     void SomCarro()
     {
         veiculoCena.pitch = rpm / somPith;
@@ -175,46 +254,10 @@ public class ControleCarro : MonoBehaviour
         }*/
     }
 
-    void Start()
+    public float getMaxRpm()
     {
-        carrorigidbody = GetComponent<Rigidbody>();
-        carrorigidbody.centerOfMass = centroDeMassa;
-
-        veiculoCena.clip = somMotor;
+        return this.maxRPM;
     }
-
-    public void SubirMarcha()
-    {
-        if (marchaAtual < quantidadeMarchas.Length)
-            marchaAtual++;
-    }
-
-    public void DescerMarcha()
-    {
-        if (marchaAtual > 0)
-            marchaAtual--;
-    }
-
-    void Update()
-    {
-        Direcao();
-        AcelerarFreiar();
-    }
-
-    void FixedUpdate()
-    {
-        Motor();
-        Transmissao();
-        SomCarro();
-    }
-
-   private void OnGUI()
-    {
-        GUI.Label(new Rect(20, 20, 500, 32), rpmTeste + " Rpm");
-        /*GUI.Label(new Rect(20, 40, 500, 32), (marchaAtual + 1) + "° Marcha");
-        GUI.Label(new Rect(20, 60, 500, 32), Mathf.Round(rpm) + " RPM");
-        GUI.Label(new Rect(20, 80, 500, 32), forca + " Torque");
-        GUI.Label(new Rect(20, 100, 500, 32), forcaFreio + " freio"); */
-    }
-    
 }
+
+
