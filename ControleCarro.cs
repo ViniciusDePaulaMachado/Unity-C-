@@ -28,7 +28,7 @@ public class ControleCarro : MonoBehaviour
     [SerializeField]
     private float somPith = 5500;
 
-    //Configuração motor
+    //ConfiguraÃ§ao motor
     [SerializeField]
     private AnimationCurve torque = new AnimationCurve();
 
@@ -42,22 +42,25 @@ public class ControleCarro : MonoBehaviour
     private float minRPM = 1000;
 
 
-    //Configuração direção
+    //Configuracao direcao
+    [SerializeField]
+    private int anguloDirecao = 30;
+
     [SerializeField]
     private float velocidadeDoVolante = 10;
 
     [SerializeField]
-    private AnimationCurve suavidadeDireção;
+    private AnimationCurve suavidadeDirecao;
 
 
-    //Configuração freios
+    //Configuracao freios
     [SerializeField]
     private float freio = 3000;
 
     [SerializeField]
     private float velocidadeDeFrenagemMaxima = 3;
 
-    //Configuração transmisão
+    //Configuracao transmisao
     [SerializeField]
     private float rpmVoltarMarcha = 4000;
 
@@ -71,9 +74,9 @@ public class ControleCarro : MonoBehaviour
     private float relacaoDiferencial = 3.9f;
 
     [SerializeField]
-    private int velocidadeDaTransmissão = 15;
+    private int velocidadeDaTransmicao = 5;
 
-    //Configuração propiedades do veiculo
+    //Configuracao propiedades do veiculo
     [System.NonSerialized]
     public float velocidadeKM;
     [System.NonSerialized]
@@ -88,10 +91,13 @@ public class ControleCarro : MonoBehaviour
 
     void Start()
     {
+        suavidadeDirecao  = new AnimationCurve(new Keyframe(0,anguloDirecao), new Keyframe(10,anguloDirecao), new Keyframe(50,15), new Keyframe(150,3), new Keyframe(600,1));
+
         carrorigidbody = GetComponent<Rigidbody>();
         carrorigidbody.centerOfMass = centroDeMassa;
         inputCarro = GetComponent<CarroInputs>();
         veiculoCena.clip = somMotor;
+
         if(gameObject.CompareTag("Player") == true)
         {
             GameObject.Find("HUB_CARRO");
@@ -122,7 +128,7 @@ public class ControleCarro : MonoBehaviour
             if (i < 2)
             {
                 rodascollider[i].steerAngle = Mathf.Lerp(rodascollider[i].steerAngle,
-                    somaInputs * suavidadeDireção.Evaluate(velocidadeKM), Time.deltaTime * velocidadeDoVolante);
+                    somaInputs * suavidadeDirecao.Evaluate(velocidadeKM), Time.deltaTime * velocidadeDoVolante);
             }
 
             rodascollider[i].GetWorldPose(out Vector3 pos, out Quaternion rot);
@@ -166,12 +172,12 @@ public class ControleCarro : MonoBehaviour
             rodascollider[3].brakeTorque = 0;
         }
 
-        // dar Ré
+        // dar RÃ©
         if(inputCarro.getDarRe() < 0)
         {
             if(marchaAtual < 1)
             {
-                Debug.Log("Ré");
+                Debug.Log("RÃ©");
                 rodascollider[0].motorTorque = -forca;
                 rodascollider[1].motorTorque = -forca;
             }
@@ -184,7 +190,7 @@ public class ControleCarro : MonoBehaviour
 
         velocidadeKM = carrorigidbody.velocity.magnitude * 3.6f;
 
-        rpm = Mathf.Lerp(rpm,velocidadeKM * (quantidadeMarchas[marchaAtual] * (relacaoDiferencial * 8)), Time.deltaTime * 5);
+        rpm = Mathf.Lerp(rpm,velocidadeKM * (quantidadeMarchas[marchaAtual] * (relacaoDiferencial * 8)), Time.deltaTime * velocidadeDaTransmicao);
 
         if (rpm > 4000 && rpm < 6000 && forca < 1000 )
         {
@@ -218,8 +224,7 @@ public class ControleCarro : MonoBehaviour
             {
                 marchaAtual = 0;
             }
-        }
-        
+        } 
     }
 
     public void SubirMarcha()
@@ -245,7 +250,7 @@ public class ControleCarro : MonoBehaviour
     {
         veiculoCena.pitch = rpm / somPith;
 
-        /* "Esse função está funcionando, só falta eu achar um audio bom de derrapagem para usar ela" 
+        /* "Esse funï¿½ï¿½o estï¿½ funcionando, sï¿½ falta eu achar um audio bom de derrapagem para usar ela" 
         if(velocidadeKM > 40f)
         {
             float valorAngulo = Vector3.Angle(transform.forward, carrorigidbody.velocity);

@@ -33,19 +33,6 @@ public class HUDCarro : MonoBehaviour
     private Text textoFimDaCorrida;
     private GameObject textoFimDaCorridaObject;
 
-    /*
-    private Text textQuantidadeGanho;
-    private GameObject textQuantidadeGanhoObject;
-    
-    private Text textQuantidadePerdido;
-    private GameObject textQuantidadePerdidoObject;
-    
-    private GameObject painelFimDaCorrida;
-
-    private GameObject voceGanhou;
-
-    private GameObject vocePerdeu;
-    */
 
     [SerializeField]
     private float minAng = 150;
@@ -57,6 +44,7 @@ public class HUDCarro : MonoBehaviour
     private int quantidadeDeDineiroPerdido;
     private int quantidadeDeDineiroGanho;
     private int quantidadeDeVoltas;
+    private int voltasSalvas;
     //========================================================================================================
     private float rpmPonteiro;
     private int limite;
@@ -71,6 +59,7 @@ public class HUDCarro : MonoBehaviour
         CarregarHud();
         check = GetComponent<CheckPointInicial>();
         logicaDinheiro = GetComponent<LogicaGanhaDinheiro>();
+        voltasSalvas = PlayerPrefs.GetInt("Voltas");
     }
     //========================================================================================================
     private void FixedUpdate()
@@ -84,7 +73,7 @@ public class HUDCarro : MonoBehaviour
     {
         textoVelocidade.text = Mathf.Round(carro.velocidadeKM).ToString();
 
-        textMarchaAtual.text = (carro.marchaAtual+1).ToString() + "°";
+        textMarchaAtual.text = (carro.marchaAtual+1).ToString() + "Â°";
 
         Vector3 RotacaoPonteiro = ponteiroRPM.rotation.eulerAngles;
 
@@ -99,7 +88,7 @@ public class HUDCarro : MonoBehaviour
     {
         voltaAtualText.text = (ContadorDeVolta.contadorDeVoltas + 1).ToString() + "/"+ quantidadeDeVoltas.ToString();
 
-        posicaoAtualText.text = 1 + pos + "°";       
+        posicaoAtualText.text = 1 + pos + "Â°";       
     }
     //========================================================================================================
     public int ReceberPosicao(int volta)
@@ -122,8 +111,9 @@ public class HUDCarro : MonoBehaviour
                 {
                     if (pos == 0)
                     {
-                        logicaDinheiro.GanharDinheiro(quantidadeDeDineiroGanho);
-                        textoFimDaCorrida.text = "Vencedor " + (pos + 1) + "° Lugar " + " R$ " + (quantidadeDeDineiroGanho)+",00";
+                        logicaDinheiro.GanharDinheiro(quantidadeDeDineiroGanho * voltasSalvas);
+
+                        textoFimDaCorrida.text = "Vencedor " + (pos + 1) + "Â° Lugar " + " +R$ " + (quantidadeDeDineiroGanho * voltasSalvas)+",00";
 
                     }
                 }
@@ -132,8 +122,8 @@ public class HUDCarro : MonoBehaviour
                 {
                     if (pos == 1 || pos == 2)
                     {
-                        logicaDinheiro.GanharDinheiro(quantidadeDeDineiroGanho / (pos + 1));
-                        textoFimDaCorrida.text = "Fim Da Corrida " + (pos + 1) + "° Lugar " + " R$ " + (quantidadeDeDineiroGanho / (pos + 1))+ ",00";
+                        logicaDinheiro.GanharDinheiro((quantidadeDeDineiroGanho * voltasSalvas) / (pos + 1));
+                        textoFimDaCorrida.text = "Fim Da Corrida " + (pos + 1) + "Â° Lugar " + " +R$ " + ((quantidadeDeDineiroGanho * voltasSalvas) / (pos + 1))+ ",00";
                     }
                 }
 
@@ -142,7 +132,7 @@ public class HUDCarro : MonoBehaviour
                     if (pos > 2)
                     {
                         logicaDinheiro.PerderDinheiro(quantidadeDeDineiroPerdido);
-                        textoFimDaCorrida.text = " Fim Da Corrida " + (pos + 1) + "° Lugar " + " R$-" + quantidadeDeDineiroPerdido+ ",00";
+                        textoFimDaCorrida.text = " Fim Da Corrida " + (pos + 1) + "Â° Lugar " + " R$-" + quantidadeDeDineiroPerdido+ ",00";
 
                     }
                 }
@@ -152,55 +142,19 @@ public class HUDCarro : MonoBehaviour
 
                 if (tempo > 10.5f)
                 {
-                    textoFimDaCorrida.text = "Vá ao Pit para voltar ao Menu";
+                    textoFimDaCorrida.text = "VÃ¡ ao Pit para voltar ao Menu";
 
                 }
                 if(tempo > 20.5f)
                 {
                     textoFimDaCorrida.text = "";
                 }
-
-                /*              
-                if(limite == 1)
-                {
-                    painelFimDaCorrida.SetActive(true);
-                    if (pos < 3)
-                    {
-                        voceGanhou.SetActive(true);
-                    }
-                    else if (pos > 2)
-                    {
-                        vocePerdeu.SetActive(true);
-                    }
-                }
-                if (pos < 3)
-                {
-                   if (limite == 1)
-                   {
-                       logicaDinheiro.GanharDinheiro(configPista.QuantidadeDeDinheitoGanho() / (pos+1));
-
-                       textQuantidadeGanho.text = "R$" + (configPista.QuantidadeDeDinheitoGanho() / (pos+1)).ToString();
-
-                       Debug.Log(textQuantidadeGanho.text);
-                   }
-                }
-                else if (pos > 2)
-                {
-                    if(limite == 1)
-                    {
-                        logicaDinheiro.PerderDinheiro(configPista.QuantidadeDeDinheitoPerdido());
-                        textQuantidadePerdido.text = "R$" + configPista.QuantidadeDeDinheitoPerdido().ToString();
-                    }
-                }
-                */
             }
         }
     }
     //========================================================================================================
     private void CarregarHud()
     {
-         
-
         ponteiroRPMObject = GameObject.Find("PonteiroImg");
         ponteiroRPM = ponteiroRPMObject.GetComponent<RectTransform>();
 
@@ -218,14 +172,6 @@ public class HUDCarro : MonoBehaviour
 
         textoFimDaCorridaObject = GameObject.Find("TextFimDaCorrida");
         textoFimDaCorrida = textoFimDaCorridaObject.GetComponent<Text>();
-
-        /*
-        textQuantidadeGanhoObject = GameObject.Find("TextQuantidadeGanho");
-        textQuantidadeGanho = textQuantidadeGanhoObject.GetComponent<Text>();
-
-        textQuantidadePerdidoObject = GameObject.Find("TextQuantidadePerdido");
-        textQuantidadePerdido = textQuantidadePerdidoObject.GetComponent<Text>();
-        */
     }
 
     public int setQuantidadeGanho(int g)
