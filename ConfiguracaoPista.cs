@@ -11,25 +11,17 @@ public class ConfiguracaoPista : MonoBehaviour
     [SerializeField]
     private int dinheitoPerdido = 5000;
     [SerializeField]
-    private int quantidadeDeVoltas = 4;
-
+    private int quantidadeDeVoltas;
 
     private void Start()
     {
         t = GameObject.FindWithTag("Player");
 
-         hudCarro = t.GetComponent<HUDCarro>();
-
-        //hudCarro = GetComponent<HUDCarro>();
-
+        hudCarro = t.GetComponent<HUDCarro>();
+        quantidadeDeVoltas = PlayerPrefs.GetInt("Voltas");
         hudCarro.setQuantidadeDeVoltas(this.quantidadeDeVoltas);
         hudCarro.setQuantidadeGanho(this.direinhoGanho);
         hudCarro.setQuatidadePerdido(this.dinheitoPerdido);
 
-        /*
-        hudCarro.setQuantidadeDeVoltas(quantidadeDeVoltas);
-        hudCarro.setQuantidadeGanho(direinhoGanho);
-        hudCarro.setQuatidadePerdido(dinheitoPerdido);
-        */
     }
 }

@@ -5,6 +5,8 @@ using UnityEngine.UI;
 
 public class CronometroVoltas : MonoBehaviour
 {
+    private bool iniciarCronometro = false;
+
     private Text cronometroText;
     private GameObject cronometroTextObject;
 
@@ -14,11 +16,10 @@ public class CronometroVoltas : MonoBehaviour
     private float segundos;
     private int minuto;
 
-    private float segundoAnterios;
-    private int minutoAnterior;
+    private float segundosDeVolta;
+    private int minutoDeVolta;
 
-    private bool iniciarCronometro = false;
-
+    //==============================================================
 
     private void Start()
     {
@@ -29,46 +30,51 @@ public class CronometroVoltas : MonoBehaviour
         TempoDeVoltaAnteriorText = TempoDeVoltaAnteriorTextObject.GetComponent<Text>();
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
         CronometrarVolta();
     }
 
     private void OnTriggerEnter(Collider c)
     {
-        
+                
         if (c.transform.root.gameObject.CompareTag("Player"))
         {
-            Debug.Log("Cronometro Iniciado");
+            Debug.Log("Ativado");
 
             iniciarCronometro = true;
 
-            minutoAnterior = this.minuto;
+            minutoDeVolta = this.minuto;
 
-            segundoAnterios = this.segundos;
+            segundosDeVolta = this.segundos;
 
-            TempoDeVoltaAnteriorText.text = minutoAnterior.ToString() + ":" + segundoAnterios.ToString("00.00");
+            if(minutoDeVolta > 0 && segundosDeVolta > 0){
+
+                TempoDeVoltaAnteriorText.text = minutoDeVolta.ToString() + ":" + segundosDeVolta.ToString("00.00");
+            }
+            else
+            {
+                TempoDeVoltaAnteriorText.text = "";
+            }
 
             this.segundos = 0;
-
             this.minuto = 0;
         }        
     }
-    
+
     private void CronometrarVolta()
     {
         if(iniciarCronometro == true)
         {
             segundos += Time.deltaTime;
 
-            cronometroText.text = minuto.ToString() + ":" + segundos.ToString("00.00");
-
             if (segundos > 59.59f)
             {
                 minuto++;
-
                 segundos = 0;
             }
+
+            cronometroText.text = minuto.ToString() + ":" + segundos.ToString("00.00");
         }
     }
 }

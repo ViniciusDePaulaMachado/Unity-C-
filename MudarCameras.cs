@@ -5,32 +5,33 @@ using UnityEngine;
 public class MudarCameras : MonoBehaviour
 {
 
-    public GameObject camera1;
-    public GameObject camera2;
-    public int cameras = 1;
-    public int numeroDeCameras = 2;
-
+    private GameObject cameraPrincipal;
+    private GameObject camera1;
+    private int limitador;
+    
+    void Start()
+    {
+        camera1 = GameObject.Find("Camera");
+        cameraPrincipal = GameObject.Find("MultipurposeCameraRig");
+        camera1.SetActive(false);
+    }
 
     public void AtivaCameraUm()
     {
-        cameras++;
+        limitador++;
 
-        if(cameras == 1)
+        if(limitador == 1)
         {
             camera1.SetActive(true);
-            camera2.SetActive(false);
-        }
-
-        if (cameras == 2)
+            cameraPrincipal.SetActive(false);
+        } 
+        if (limitador == 2)
         {
-            camera2.SetActive(true);
+            cameraPrincipal.SetActive(true);
             camera1.SetActive(false);
+            limitador = 0;
         }
-
-        if (cameras >= numeroDeCameras)
-        {
-            cameras = 0;
-        }
+        
     }
 
 }
